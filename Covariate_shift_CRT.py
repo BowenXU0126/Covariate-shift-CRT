@@ -19,7 +19,7 @@ from sklearn.linear_model import Lasso
 class Covariate_shift_CRT:
     def __init__(self, X_source, X_target,
                  Z_source, Z_target, V_source, V_target,Y_source,
-                 source_distribution,L=5, K = 10, T_statistic= 'LASSO',
+                 source_distribution,band_width = 0.1,L=5, K = 10, T_statistic= 'LASSO',
                  weight_estimate = 'Kernel density', covariate_shift = True):
         
         self.covariate_shift = True
@@ -27,6 +27,7 @@ class Covariate_shift_CRT:
         self.K = K
         self.source_distribution = source_distribution
         self.weight_estimate = weight_estimate
+        self.band_width = band_width
         self.T_statistic = T_statistic
         self.X_s = X_source
         self.X_t = X_target
