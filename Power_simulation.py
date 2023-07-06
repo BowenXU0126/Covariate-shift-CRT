@@ -158,7 +158,14 @@ if __name__ == '__main__':
     # distill information of Z on Y
     reg = LassoCV().fit(Z_source,Y_source)
     
-    # verification by the p value
-    for j in range(1000):
+    count = 0
+    # estimate power of the test
+    for j in range(100):
         cov1 = generate_cov_matrix(Y_source, X_source, Z_source,V_source, L = 10, K = 20)
-        print(monte_carlo_p_value(100000, cov1, 10, PCRtest(Y_source, X_source, Z_source,V_source, L = 10, K = 20, covariate_shift = True)[1]))
+        p_value = monte_carlo_p_value(100000, cov1, 10, \
+                                      PCRtest(Y_source, X_source, Z_source,V_source, L = 10, K = 20, covariate_shift = True)[1])
+        print(p_value)
+        if p_value < 0.1:
+            count += 1
+    
+    probability = count/100
