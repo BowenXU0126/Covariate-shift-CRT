@@ -303,7 +303,7 @@ u = np.array([ 0.11092259, -1.15099358,  0.37569802, -0.60063869, -0.29169375])
 #     print("Usage: python Power_simulation.py <l>")
 #     sys.exit(1)
 
-l = 3
+l = 30
 
 
 power_enhance = False
@@ -312,7 +312,7 @@ if power_enhance ==  False:
     count = 0
     #calculate covariance matrix
 
-    for j in range(600):
+    for j in range(500):
         #generate data
         Y_source, X_source, V_source, Z_source, Y_target, X_target, V_target, Z_target = \
         generate(ns,nt, p,q, s, t, u, Alpha_s = 0, Alpha_t = 2)
@@ -329,7 +329,7 @@ if power_enhance ==  False:
         # densratio_obj = densratio(D_t, D_s)
         # #calculate density ratio for each sample
         # sample_density_ratio1 = densratio_obj.compute_density_ratio(D_s)
-        true_dr = true_density_ratio(X_source[:n_labeled], Z_source[n_labeled], V_source[:n_labeled],s,t,p,q,Alpha_s = 0, Alpha_t = 2)
+        true_dr = true_density_ratio(X_source, Z_source, V_source,s,t,p,q,Alpha_s = 0, Alpha_t = 2)[:n_labeled]
         est_dr = v_dr[:n_labeled] * xz_dr[:n_labeled]
     
         
@@ -345,7 +345,7 @@ if power_enhance ==  False:
         #print(p_value)
         if p_value < 0.1:
             count += 1
-    probability = count/600
+    probability = count/500
 
     with open("Power_L_true_n1000_0.1.txt", "a+") as text_file:
         text_file.write("L: %s, power: %s\n" % (l, probability))
