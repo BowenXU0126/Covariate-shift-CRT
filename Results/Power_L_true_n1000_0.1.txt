@@ -1,0 +1,14 @@
+
+L: 2, power: 0.86375
+L: 3, power: 0.9
+L: 4, power: 0.88
+L: 5, power: 0.885
+L: 6, power: 0.86375
+L: 7, power: 0.8275
+L: 8, power: 0.7925
+L: 9, power: 0.77875
+L: 10, power: 0.74375
+L: 12, power: 0.69
+L: 13, power: 0.67625
+L: 15, power: 0.6075
+
