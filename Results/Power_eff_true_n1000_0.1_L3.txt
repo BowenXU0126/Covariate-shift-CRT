@@ -1,0 +1,12 @@
+Effect: -2, power: 0.818
+Effect: -1.5, power: 0.76
+Effect: -1, power: 0.54
+Effect: -0.5, power: 0.222
+Effect: 0, power: 0.09
+Effect: 0.5, power: 0.248
+Effect: 1, power: 0.588
+Effect: 1.5, power: 0.828
+Effect: 2, power: 0.912
+
+
+

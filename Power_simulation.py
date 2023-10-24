@@ -303,8 +303,9 @@ u = np.array([ 0.11092259, -1.15099358,  0.37569802, -0.60063869, -0.29169375])
 #     print("Usage: python Power_simulation.py <l>")
 #     sys.exit(1)
 
-l = 30
-
+l = 3
+effect_s = 0
+effect_t = 2
 
 power_enhance = False
 
@@ -315,7 +316,7 @@ if power_enhance ==  False:
     for j in range(500):
         #generate data
         Y_source, X_source, V_source, Z_source, Y_target, X_target, V_target, Z_target = \
-        generate(ns,nt, p,q, s, t, u, Alpha_s = 0, Alpha_t = 2)
+        generate(ns,nt, p,q, s, t, u, Alpha_s = effect_s, Alpha_t = effect_t)
 
         # # concatenate X,Z,V together
         # D_s = np.concatenate((X_source, Z_source, V_source), axis = 1)
@@ -329,14 +330,14 @@ if power_enhance ==  False:
         # densratio_obj = densratio(D_t, D_s)
         # #calculate density ratio for each sample
         # sample_density_ratio1 = densratio_obj.compute_density_ratio(D_s)
-        true_dr = true_density_ratio(X_source, Z_source, V_source,s,t,p,q,Alpha_s = 0, Alpha_t = 2)[:n_labeled]
+        true_dr = true_density_ratio(X_source, Z_source, V_source,s,t,p,q,Alpha_s = effect_s, Alpha_t = effect_t)[:n_labeled]
         est_dr = v_dr[:n_labeled] * xz_dr[:n_labeled]
     
         
         cov1 = generate_cov_matrix(Y_source[:n_labeled], X_source[:n_labeled], Z_source[:n_labeled],
-                                V_source[:n_labeled],u,s,t, L = l, K = 20, density_ratio = true_dr, regr = reg)
+                                V_source[:n_labeled],u,s,t, L = l, K = 20, density_ratio = est_dr, regr = reg)
         w, statistic = PCRtest(Y_source[:n_labeled], X_source[:n_labeled], Z_source[:n_labeled],
-                            V_source[:n_labeled],u,s,t, L = l, K = 20, covariate_shift = True, density_ratio = true_dr, regr = reg)
+                            V_source[:n_labeled],u,s,t, L = l, K = 20, covariate_shift = True, density_ratio = est_dr, regr = reg)
         weight = la.eigh(cov1)[0]
         # print([w,statistic])
 
@@ -347,8 +348,8 @@ if power_enhance ==  False:
             count += 1
     probability = count/500
 
-    with open("Power_L_true_n1000_0.1.txt", "a+") as text_file:
-        text_file.write("L: %s, power: %s\n" % (l, probability))
+    with open("Results/Power_eff_est_n1000_0.1.txt", "a+") as text_file:
+        text_file.write("Effect: %s, power: %s\n" % (effect_t, probability))
 
 else:
     count = 0
@@ -356,7 +357,7 @@ else:
     probability= 0
     for j in range(1000):
         #generate data
-        Y_source, X_source, V_source, Z_source, Y_target, X_target, V_target, Z_target = generate(ns,nt, p,q, s, t, u, Alpha_s = 1, Alpha_t = 0)
+        Y_source, X_source, V_source, Z_source, Y_target, X_target, V_target, Z_target = generate(ns,nt, p,q, s, t, u, Alpha_s = effect_s, Alpha_t = effect_t)
 
         # calculate density ratio
         D_s = np.concatenate((X_source, Z_source, V_source), axis = 1)
@@ -366,7 +367,7 @@ else:
         xz_dr = xz_ratio(X_source,Z_source, V_source, s,t,p,q)
         reg=1
         
-        true_dr = true_density_ratio(X_source[:n_labeled], Z_source[:n_labeled], V_source[:n_labeled],s,t,p,q,Alpha_s = 1, Alpha_t = 0)
+        true_dr = true_density_ratio(X_source[:n_labeled], Z_source[:n_labeled], V_source[:n_labeled],s,t,p,q,Alpha_s = effect_s, Alpha_t = effect_t)
         est_dr = v_dr[:n_labeled] * xz_dr[:n_labeled]
         
         WV, statistic, a, b, c, g = PCRtest_Powen(Y_source[:n_labeled], X_source[:n_labeled], Z_source[:n_labeled], V_source[:n_labeled], Y_target[:n_labeled], X_target[:n_labeled], Z_target[:n_labeled], V_target[:n_labeled], u, s, t, l, 20, true_dr, reg)
@@ -379,5 +380,5 @@ else:
             count += 1
         probability = count/(j+1)
 
-    with open("Size_enhance_L_est_n2000_0.1.txt", "a+") as text_file:
+    with open("/gpfsnyu/home/bx2038/Covariate-shift-CRT/Results/Size_enhance_L_est_n2000_0.1.txt", "a+") as text_file:
         text_file.write("L: %s, size: %s\n" % (l, probability))

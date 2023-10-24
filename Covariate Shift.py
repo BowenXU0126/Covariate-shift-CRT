@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import norm, chi2, truncnorm
 from tqdm import trange
 import ite7
-
+# 1
 def Covariate_Shift_Weight(x, z, v):
     return 1
 
