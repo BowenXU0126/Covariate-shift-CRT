@@ -7,33 +7,37 @@ from sklearn.linear_model import LassoCV
 from sklearn.metrics import r2_score
 
 import momentchi2 as mchi
+import warnings
+
+# 禁用特定类型的警告
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 
-# Logistic regression density ratio estimation
-def density_ratio_estimate_prob_LR(D_nu, D_de):
-    l_nu = np.ones(len(D_nu))
-    l_de = np.zeros(len(D_de))
+# # Logistic regression density ratio estimation
+# def density_ratio_estimate_prob_LR(D_nu, D_de):
+#     l_nu = np.ones(len(D_nu))
+#     l_de = np.zeros(len(D_de))
     
-    l = np.concatenate((l_nu, l_de))
-    D = np.concatenate((D_nu, D_de))
+#     l = np.concatenate((l_nu, l_de))
+#     D = np.concatenate((D_nu, D_de))
     
-    # Adding cross terms
-    cross_terms_nu = np.prod(D_nu, axis=1)  # Taking the element-wise product of features in D_nu
-    cross_terms_de = np.prod(D_de, axis=1)  # Taking the element-wise product of features in D_de
-    D_nu_with_cross_terms = np.hstack((D_nu, cross_terms_nu[:, np.newaxis]))
-    D_de_with_cross_terms = np.hstack((D_de, cross_terms_de[:, np.newaxis]))
-    D_with_cross_terms = np.concatenate((D_nu_with_cross_terms, D_de_with_cross_terms))
+#     # Adding cross terms
+#     cross_terms_nu = np.prod(D_nu, axis=1)  # Taking the element-wise product of features in D_nu
+#     cross_terms_de = np.prod(D_de, axis=1)  # Taking the element-wise product of features in D_de
+#     D_nu_with_cross_terms = np.hstack((D_nu, cross_terms_nu[:, np.newaxis]))
+#     D_de_with_cross_terms = np.hstack((D_de, cross_terms_de[:, np.newaxis]))
+#     D_with_cross_terms = np.concatenate((D_nu_with_cross_terms, D_de_with_cross_terms))
     
-    # Fit logistic model with cross terms
-    C = 0.1
-    model = LogisticRegressionCV(penalty='l1', solver='liblinear', cv=5)
-    model.fit(D_with_cross_terms, l)
+#     # Fit logistic model with cross terms
+#     C = 0.1
+#     model = LogisticRegressionCV(penalty='l1', solver='liblinear', cv=5)
+#     model.fit(D_with_cross_terms, l)
     
-    # Get density ratios for all samples
-    density_ratios = (model.predict_proba(D_de_with_cross_terms)[:, 1] / model.predict_proba(D_de_with_cross_terms)[:, 0]) * (len(D_de) / len(D_nu))
+#     # Get density ratios for all samples
+#     density_ratios = (model.predict_proba(D_de_with_cross_terms)[:, 1] / model.predict_proba(D_de_with_cross_terms)[:, 0]) * (len(D_de) / len(D_nu))
     
-    return density_ratios
+#     return density_ratios
 
 def est_v_ratio(X_s, Z_s, V_s, X_t, Z_t, V_t):
     # Generate cross-terms between X_s and Z_s
@@ -73,24 +77,24 @@ def est_v_ratio(X_s, Z_s, V_s, X_t, Z_t, V_t):
     
     return v_ratio
 
-# normal distribution density ration estimation(directly calculate covarince and mean)
-def norm_est_ratio(D_s, D_t):
-    ns = D_s.shape[0]
-    nt = D_t.shape[0]
-    p = D_s.shape[1]
+# # normal distribution density ration estimation(directly calculate covarince and mean)
+# def norm_est_ratio(D_s, D_t):
+#     ns = D_s.shape[0]
+#     nt = D_t.shape[0]
+#     p = D_s.shape[1]
     
-    ED_s = np.mean(D_s, axis=0)
-    ED_t = np.mean(D_t, axis=0)
+#     ED_s = np.mean(D_s, axis=0)
+#     ED_t = np.mean(D_t, axis=0)
     
-    CS = np.cov(D_s.T)
-    CT = np.cov(D_t.T)
+#     CS = np.cov(D_s.T)
+#     CT = np.cov(D_t.T)
     
-    pdf_s = multivariate_normal.pdf(D_s, mean=ED_s, cov=CS)
-    pdf_t = multivariate_normal.pdf(D_s, mean=ED_t, cov=CT)
+#     pdf_s = multivariate_normal.pdf(D_s, mean=ED_s, cov=CS)
+#     pdf_t = multivariate_normal.pdf(D_s, mean=ED_t, cov=CT)
     
-    true_ = pdf_t / pdf_s
+#     true_ = pdf_t / pdf_s
     
-    return true_
+#     return true_
 
 # generate x couterfeits
 def Model_X(z, v, u):
@@ -159,6 +163,7 @@ def generate_cov_matrix(Y, X, Z, V,u, s, t, L, K, density_ratio, regr):
     covariance_matrix = np.full((L, L), -1/L)  # Fill all entries with 1/L
     np.fill_diagonal(covariance_matrix, diag)  # Set diagonal entries to 1 - 1/L^2
     return covariance_matrix
+
 
 def PCRtest_Powen(Y, X, Z, V, Y_, X_, Z_, V_, u, s, t, L, K, density_ratio, regr):
     a, b, c = [], [], []
@@ -234,12 +239,12 @@ def generate_cov_matrix_powen(ind_y_source, ind_v_source, ind_v_target ,gamma, L
 
 # Define the data genaration process
 
-def generate(ns, nt, p,q, s, t, u, Alpha_s=0, Alpha_t = 2):
+def generate(ns, nt, p,q, s, t, u, Alpha_s=0, Alpha_t = 2,z_diff = 0.1):
     Zs_null = np.random.normal(0,0.1, (ns, q))
     Zt_null = np.random.normal(0,0.1, (nt, q))
     
     Z_source = np.hstack((np.random.normal(0, 1, (ns, p)) , Zs_null))
-    Z_target = np.hstack((np.random.normal(0.1, 1, (nt, p)) , Zt_null))
+    Z_target = np.hstack((np.random.normal(z_diff, 1, (nt, p)) , Zt_null))
     
     X_source = Z_source[:, :p] @ u + np.random.normal(0, 1, ns)
     X_target = Z_target[:, :p] @ u + np.random.normal(0, 1, nt)
@@ -258,13 +263,13 @@ def generate(ns, nt, p,q, s, t, u, Alpha_s=0, Alpha_t = 2):
            Y_target.reshape(-1, 1), X_target.reshape(-1, 1), V_target.reshape(-1, 1), Z_target
 
 
-def true_density_ratio(X, Z, V, s, t,p,q, Alpha_s = 0, Alpha_t = 2):
+def true_density_ratio(X, Z, V, s, t,p,q, Alpha_s = 0, Alpha_t = 2,z_diff = 0.1):
     ratios = []
     size = V.size
     for i in range(size):
         zs_prob = multivariate_normal.pdf(Z[i][:p], mean = 0*np.ones(p), cov= 1*np.identity(p))
         vs_prob = norm.pdf(V[i], loc=Z[i][:p]@s + Alpha_s*X[i], scale =5)
-        zt_prob = multivariate_normal.pdf(Z[i][:p], mean = 0.1*np.ones(p), cov= 1*np.identity(p))
+        zt_prob = multivariate_normal.pdf(Z[i][:p], mean = z_diff*np.ones(p), cov= 1*np.identity(p))
         vt_prob = norm.pdf(V[i], loc=Z[i][:p]@t + Alpha_t*X[i], scale =5)
         ratios.append((zt_prob*vt_prob)/(zs_prob*vs_prob))
     # zs_probs = multivariate_normal.pdf(Z[:, :p], mean=0*np.ones(p), cov=np.identity(p))
@@ -272,14 +277,14 @@ def true_density_ratio(X, Z, V, s, t,p,q, Alpha_s = 0, Alpha_t = 2):
     # zt_probs = multivariate_normal.pdf(Z[:, :p], mean=0.2*np.ones(p), cov=np.identity(p))
     # vt_probs = norm.pdf(V, loc=(Z[:, :p] @ t).reshape(-1,1) - 2*X, scale=5)
     # ratios = (zt_probs * vt_probs) / (zs_probs * vs_probs)
-    return ratios
+    return np.array(ratios)
 
-def xz_ratio(X, Z, V, s, t,p,q):
+def xz_ratio(X, Z, V, s, t,p,q, z_diff=0.1):
     ratios = []
     size = V.size
     for i in range(size):
         zs_prob = multivariate_normal.pdf(Z[i][:p], mean = 0*np.ones(p), cov= 1*np.identity(p))
-        zt_prob = multivariate_normal.pdf(Z[i][:p], mean = 0.1*np.ones(p), cov= 1*np.identity(p))
+        zt_prob = multivariate_normal.pdf(Z[i][:p], mean = z_diff*np.ones(p), cov= 1*np.identity(p))
         ratios.append((zt_prob)/(zs_prob))
     
     return ratios
@@ -303,52 +308,81 @@ u = np.array([ 0.11092259, -1.15099358,  0.37569802, -0.60063869, -0.29169375])
 #     print("Usage: python Power_simulation.py <l>")
 #     sys.exit(1)
 
-l = 30
-
-
+l = 20
+effect_s = 0
+effect_t = 2
+z_difference = 0.1
+est_density_ratio = True
 power_enhance = False
+reg = 1
 
+# Power enhancement or not
 if power_enhance ==  False:
     count = 0
-    #calculate covariance matrix
+    # Whether to use estimate or true density ratio
+    if est_density_ratio:
+        for j in range(800):
+            #generate data
+            Y_source, X_source, V_source, Z_source, Y_target, X_target, V_target, Z_target = \
+            generate(ns,nt, p,q, s, t, u, Alpha_s = effect_s, Alpha_t = effect_t, z_diff = z_difference)
 
-    for j in range(500):
-        #generate data
-        Y_source, X_source, V_source, Z_source, Y_target, X_target, V_target, Z_target = \
-        generate(ns,nt, p,q, s, t, u, Alpha_s = 0, Alpha_t = 2)
+            # Estimate the density ratio with V|X,Z conditional model
+            v_dr = est_v_ratio(X_source, Z_source, V_source, X_target, Z_target, V_target)
+            xz_dr = xz_ratio(X_source,Z_source, V_source, s,t,p,q,z_diff=z_difference)
+            est_dr = v_dr[:n_labeled] * xz_dr[:n_labeled]
 
-        # # concatenate X,Z,V together
-        # D_s = np.concatenate((X_source, Z_source, V_source), axis = 1)
-        # D_t = np.concatenate((X_target, Z_target, V_target), axis = 1)
+            #generate covariance matrix
+            cov1 = generate_cov_matrix(Y_source[:n_labeled], X_source[:n_labeled], Z_source[:n_labeled],
+                                V_source[:n_labeled],u,s,t, L = l, K = 20, density_ratio = est_dr, regr = reg)
+            
+            # Calculate the test statistic
+            w, statistic = PCRtest(Y_source[:n_labeled], X_source[:n_labeled], Z_source[:n_labeled],
+                            V_source[:n_labeled],u,s,t, L = l, K = 20, covariate_shift = True, density_ratio = est_dr, regr = reg)
+            
+            #Get the eigenvalue of the covariance matrix as weight
+            weight = la.eigh(cov1)[0]
+            # In case the weight is negative
+            weight = abs(weight)
 
+            # calculate the p value as weighted sum of chi squared random variables
+            p_value = 1-mchi.hbe(coeff=weight, x=statistic)
+            
+            #Determine to reject the null or not
+            if p_value < 0.1:
+                count += 1
+            
+            # Update the probability as the power
+            probability = count/(j+1)
 
-
-        reg = 1
-        v_dr = est_v_ratio(X_source, Z_source, V_source, X_target, Z_target, V_target)
-        xz_dr = xz_ratio(X_source,Z_source, V_source, s,t,p,q)
-        # densratio_obj = densratio(D_t, D_s)
-        # #calculate density ratio for each sample
-        # sample_density_ratio1 = densratio_obj.compute_density_ratio(D_s)
-        true_dr = true_density_ratio(X_source, Z_source, V_source,s,t,p,q,Alpha_s = 0, Alpha_t = 2)[:n_labeled]
-        est_dr = v_dr[:n_labeled] * xz_dr[:n_labeled]
-    
+        # Write the results in the file
+        with open("/gpfsnyu/home/bx2038/Covariate-shift-CRT/Results/Power_L_est_n1000_0.1.txt", "a+") as text_file:
+            text_file.write("L: %s, power: %s\n" % (l, probability))
+    else:
+        for j in range(800):
+            #generate data
+            Y_source, X_source, V_source, Z_source, Y_target, X_target, V_target, Z_target = \
+            generate(ns,nt, p,q, s, t, u, Alpha_s = effect_s, Alpha_t = effect_t, z_diff = z_difference)
+            true_dr = true_density_ratio(X_source, Z_source, V_source,s,t,p,q,Alpha_s = effect_s, Alpha_t = effect_t, z_diff= z_difference)[:n_labeled]
+            
         
-        cov1 = generate_cov_matrix(Y_source[:n_labeled], X_source[:n_labeled], Z_source[:n_labeled],
-                                V_source[:n_labeled],u,s,t, L = l, K = 20, density_ratio = true_dr, regr = reg)
-        w, statistic = PCRtest(Y_source[:n_labeled], X_source[:n_labeled], Z_source[:n_labeled],
-                            V_source[:n_labeled],u,s,t, L = l, K = 20, covariate_shift = True, density_ratio = true_dr, regr = reg)
-        weight = la.eigh(cov1)[0]
-        # print([w,statistic])
+            
+            cov1 = generate_cov_matrix(Y_source[:n_labeled], X_source[:n_labeled], Z_source[:n_labeled],
+                                    V_source[:n_labeled],u,s,t, L = l, K = 20, density_ratio = true_dr, regr = reg)
+            w, statistic = PCRtest(Y_source[:n_labeled], X_source[:n_labeled], Z_source[:n_labeled],
+                                V_source[:n_labeled],u,s,t, L = l, K = 20, covariate_shift = True, density_ratio = true_dr, regr = reg)
+            weight = la.eigh(cov1)[0]
+            # print([w,statistic])
+            weight = abs(weight)
+            # calculate the p value as weighted sum of chi squared random variables
+            p_value = 1-mchi.hbe(coeff=weight, x=statistic)
+            #print(p_value)
+            if p_value < 0.1:
+                count += 1
+            probability = count/(j+1)
+        with open("/gpfsnyu/home/bx2038/Covariate-shift-CRT/Results/Power_L_true_n1000_0.1.txt", "a+") as text_file:
+            text_file.write("L: %s, power: %s\n" % (l, probability))
 
-        # calculate the p value as weighted sum of chi squared random variables
-        p_value = 1-mchi.hbe(coeff=weight, x=statistic)
-        #print(p_value)
-        if p_value < 0.1:
-            count += 1
-    probability = count/500
-
-    with open("Power_L_true_n1000_0.1.txt", "a+") as text_file:
-        text_file.write("L: %s, power: %s\n" % (l, probability))
+    
 
 else:
     count = 0
@@ -356,7 +390,7 @@ else:
     probability= 0
     for j in range(1000):
         #generate data
-        Y_source, X_source, V_source, Z_source, Y_target, X_target, V_target, Z_target = generate(ns,nt, p,q, s, t, u, Alpha_s = 1, Alpha_t = 0)
+        Y_source, X_source, V_source, Z_source, Y_target, X_target, V_target, Z_target = generate(ns,nt, p,q, s, t, u, Alpha_s = effect_s, Alpha_t = effect_t)
 
         # calculate density ratio
         D_s = np.concatenate((X_source, Z_source, V_source), axis = 1)
@@ -366,7 +400,7 @@ else:
         xz_dr = xz_ratio(X_source,Z_source, V_source, s,t,p,q)
         reg=1
         
-        true_dr = true_density_ratio(X_source[:n_labeled], Z_source[:n_labeled], V_source[:n_labeled],s,t,p,q,Alpha_s = 1, Alpha_t = 0)
+        true_dr = true_density_ratio(X_source[:n_labeled], Z_source[:n_labeled], V_source[:n_labeled],s,t,p,q,Alpha_s = effect_s, Alpha_t = effect_t)
         est_dr = v_dr[:n_labeled] * xz_dr[:n_labeled]
         
         WV, statistic, a, b, c, g = PCRtest_Powen(Y_source[:n_labeled], X_source[:n_labeled], Z_source[:n_labeled], V_source[:n_labeled], Y_target[:n_labeled], X_target[:n_labeled], Z_target[:n_labeled], V_target[:n_labeled], u, s, t, l, 20, true_dr, reg)
@@ -379,5 +413,5 @@ else:
             count += 1
         probability = count/(j+1)
 
-    with open("Size_enhance_L_est_n2000_0.1.txt", "a+") as text_file:
+    with open("/gpfsnyu/home/bx2038/Covariate-shift-CRT/Results/Size_enhance_L_est_n2000_0.1.txt", "a+") as text_file:
         text_file.write("L: %s, size: %s\n" % (l, probability))

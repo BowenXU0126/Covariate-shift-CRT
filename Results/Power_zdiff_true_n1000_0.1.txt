@@ -1,0 +1,12 @@
+Zdiff: 0.1, power: 0.884
+Zdiff: 0.2, power: 0.856
+Zdiff: 0.3, power: 0.73
+Zdiff: 0.4, power: 0.4
+Zdiff: 0.5, power: 0.382
+Zdiff: 0.6, power: 0.254
+Zdiff: 0.7, power: 0.178
+Zdiff: 0.8, power: 0.192
+Zdiff: 0.9, power: 0.194
+Zdiff: 1, power: 0.206
+
+

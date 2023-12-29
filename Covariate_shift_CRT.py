@@ -17,25 +17,28 @@ from sklearn.linear_model import LassoCV
 from sklearn.linear_model import Lasso
 
 class Covariate_shift_CRT:
-    def __init__(self, X_source, X_target,
-                 Z_source, Z_target, V_source, V_target,Y_source,
-                 source_distribution, band_width = 0.1,L=5, K = 10, T_statistic= 'LASSO',
-                 weight_estimate = 'Kernel density', covariate_shift = True):
-        
+    def __init__(self,L=3, K = 20, X_cond_model = None, score_fnc= 'residual correlation',
+                 covariate_shift = True, est_dr = True, dr = None, power_enhance = True):
+        # L: Int. number of bins binning the p-values in the test (tuning parameter). L=3 is recommended(best performance in simulation)
+        # K: Int. Controls the number of couterfeits for each test, M = LK-1
+        # X_cond_model: Function. Should be a conditional model X|Z.
+        #              Input: Z value
+        #              Output: The probability distribution of X|Z
+        # score_fnc: Function.
         self.covariate_shift = True
         self.L = L
         self.K = K
-        self.source_distribution = source_distribution
-        self.weight_estimate = weight_estimate
-        self.band_width = band_width
-        self.T_statistic = T_statistic
-        self.X_s = X_source
-        self.X_t = X_target
-        self.Z_s = Z_source
-        self.Z_t = Z_target
-        self.V_t = V_target
-        self.V_s = V_source
-        self.Y_s = Y_source
+        self.X_cond_model  = X_cond_model
+        self.t_statistic = score_fnc
+        self.covariate_shift = True
+        self.power_enhance = power_enhance
+        self.est_dr = est_dr
+        self.dr = None
+        if self.est_dr:
+            self.dr = dr
+
+            
+
         
         
     def Covariate_Shift_Weight(self, x, z, v = 0):
@@ -44,10 +47,10 @@ class Covariate_shift_CRT:
         if callable(self.weight_estimate):
             return self.weight_estimate(x,z,v)
     
-    def Model_X(self, z, v = 0):
+    def Counterfeits(self, z, v = 0):
         return self.source_distribution(z,v).rvs(size = 1)
     
-    def T_statistic(self, y, x, z, v = 0):
+    def Score(self, y, x, z, v = 0):
         if self.T_statistic == 'LASSO':
             a = np.c_[self.Z_s,self.X_s]
             reg = LassoCV().fit(a,self.Y_s)
@@ -57,7 +60,7 @@ class Covariate_shift_CRT:
         else:
             raise ValueError('Method not included.')
     
-    def Conterfeits(self, y, x, z, v = 0):
+    def generate_pvalue(self, y, x, z, v = 0):
         M = self.L * self.K - 1
         rank = 1
         
