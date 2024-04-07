@@ -10,9 +10,13 @@ from tqdm import trange
 from densratio import densratio
 from numpy import linalg as la
 import momentchi2 as mchi
-
+from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import RidgeCV
 
 # Function for estimate the conditional model of V|X,Z
+from sklearn.linear_model import ElasticNetCV
+
+
 def est_v_ratio(X_s, Z_s, V_s, Y_s, X_t, Z_t, V_t, test_size=0.5):
     '''
     Input:
@@ -22,15 +26,16 @@ def est_v_ratio(X_s, Z_s, V_s, Y_s, X_t, Z_t, V_t, test_size=0.5):
     X_s_test,Z_s_test, V_s_test, Y_s_test :the (X,Z,V,Y)s data used for the test(ndarray)
     '''
     # Train-test split for source domain
-    X_s_train, X_s_test, Z_s_train, Z_s_test, V_s_train, V_s_test, Y_s_train, Y_s_test= train_test_split(
+    X_s_train, X_s_test, Z_s_train, Z_s_test, V_s_train, V_s_test, Y_s_train, Y_s_test = train_test_split(
         X_s, Z_s, V_s, Y_s, test_size=test_size, random_state=42
     )
    
-    # Concacanate the X and Z data
+    # Concatenate the X and Z data
     D_s_train = np.concatenate((Z_s_train, X_s_train), axis=1)
     model_s = LassoCV(cv=5)
     model_s.fit(D_s_train, V_s_train.ravel())
-
+    print(model_s.coef_)
+    
     # Estimate the variance of the V|X,Z model for testing data
     D_s_test = np.concatenate((Z_s_test, X_s_test), axis=1)
     V_pred_s_test = model_s.predict(D_s_test)
@@ -49,7 +54,8 @@ def est_v_ratio(X_s, Z_s, V_s, Y_s, X_t, Z_t, V_t, test_size=0.5):
     D_t_train = np.concatenate((Z_t_train, X_t_train), axis=1)
     model_t = LassoCV(cv=5)
     model_t.fit(D_t_train, V_t_train.ravel())
-
+    print(model_t.coef_)
+    
     # Estimate the variance of the V|X,Z model for testing data
     D_t_test = np.concatenate((Z_t_test, X_t_test), axis=1)
     V_pred_t_test = model_t.predict(D_t_test)
@@ -62,8 +68,8 @@ def est_v_ratio(X_s, Z_s, V_s, Y_s, X_t, Z_t, V_t, test_size=0.5):
 
     v_ratio_test = V_t_prob_test / V_s_prob_test
 
-    return v_ratio_test, X_s_test,Z_s_test, V_s_test, Y_s_test
-   
+    return v_ratio_test, X_s_test, Z_s_test, V_s_test, Y_s_test
+
 # Function for CRT statistic calculation for each sample
 def T_statistic(y, x, z, v, E_X):
     '''
@@ -77,7 +83,7 @@ def T_statistic(y, x, z, v, E_X):
     d_x = E_X(z,v)
     
     # Return the test statistic
-    return abs(y*(x-d_x))
+    return y*x
 
 # Function for ranking the pvalues of all conterfeits and assign the sample the bin index
 def Bin_pvalue(y, x, z, v, model_X, E_X, L, K):
@@ -140,7 +146,7 @@ def PCRtest( Y, X, Z, V,model_X, E_X,density_ratio, L, K,covariate_shift):
            
         # Normal PCR test
         if covariate_shift == False:
-            W[Bin_pvalue(y, x, z, v, L, K, model_X, E_X)] += 1
+            W[Bin_pvalue(y, x, z, v, model_X, E_X, L, K)] += 1
     
     # Return the weights and the test statistic for csPCR test
     return W, L/n * np.dot(W - n/L, W - n/L)
@@ -179,81 +185,6 @@ def generate_cov_matrix(Y, X, Z, V, model_X, E_X, density_ratio,L, K):
     # Return the 
     return covariance_matrix
 
-# Function for power enhancement version PCR test
-def PCRtest_Powen(Y, X, Z, V, Y_, X_, Z_, V_, model_X, E_X, L, K, density_ratio):
-
-    a, b, c = [], [], []
-    W = np.array([0.0]*L)
-    ns, nt = Y.size, Y_.size
-    for j in range(ns):
-        y, x, z, v = Y[j], X[j], Z[j], V[j]
-        ind_y = Bin_pvalue(y, x, z, v, model_X, E_X, L, K)
-        ind_v = Bin_pvalue(y, x, z, v, model_X, E_X, L, K)
-        a.append(ind_y)
-        b.append(ind_v)
-    
-    a = np.array(a)
-    b = np.array(b)
-    density_ratio=np.array(density_ratio).ravel()
-    
-    y_ind = (a*density_ratio)-(a@density_ratio.T)
-    v_ind = (b*density_ratio)-(b@density_ratio.T)
-    g = (y_ind@(v_ind.T))/(v_ind@(v_ind.T))
-    #print(y_ind, v_ind, g)
-    #g=((a-a.mean())@(b-b.mean()).T)/((b-b.mean())@(b-b.mean()).T)
-    for j in range(nt):
-        y_, x_, z_, v_ = Y_[j], X_[j], Z_[j], V_[j]
-        ind_v_ = Bin_pvalue(v_, x_, z_, v_,model_X, E_X, L, K)
-        W[ind_v_] += ns/nt*g
-        c.append(ind_v_)
-
-    c = np.array(c)
-    for j in range(ns):
-        W[a[j]] += density_ratio[j]
-        W[b[j]] -= density_ratio[j]*g    
-
-    return W, L/ns * np.dot(W - ns/L, W - ns/L), a, b, c, g
-
-
-def I(a, b):
-    if a == b:
-        return 1
-    else:
-        return 0
-
-
-# Generate covariance matrix for the power enhancement version
-def generate_cov_matrix_powen(ind_y_source, ind_v_source, ind_v_target ,gamma, L, K, density_ratio):
-    ns = ind_y_source.size
-    nt = ind_v_target.size
-
-    cov_matrix = np.zeros((L, L))
-    E_t = []
-    E_s = []
-    V_t = []
-    for l in range(L):
-        e = 0
-        f = 0
-        for i in range(nt):
-            e += I(ind_v_target[i], l)
-        for j in range(ns):
-            f += float(density_ratio[j]*(I(ind_y_source[j], l) - gamma*I(ind_v_source[j], l)))
-        E_t.append(e*gamma*ns/nt)
-        V_t.append(e*(nt - e) * gamma**2 *ns**2 / (nt**3))
-        E_s.append(f)
-
-    for l_1 in range(L):
-        for l_2 in range(l_1+1):
-            e = 0
-            for j in range(ns):
-                ind_v_source[j]
-                e += density_ratio[j]**2*(I(ind_y_source[j], l_1) - gamma*I(ind_v_source[j], l_1))*(I(ind_y_source[j], l_2) - gamma*I(ind_v_source[j], l_2))
-
-            cov_matrix[l_1, l_2] = e - E_s[l_1]*E_s[l_2]/ns + I(l_1, l_2)*V_t[l_1] - (1 - I(l_1, l_2))*E_t[l_1]*E_t[l_2]/(nt**2)
-            cov_matrix[l_2, l_1] = e - E_s[l_1]*E_s[l_2]/ns + I(l_1, l_2)*V_t[l_1] - (1 - I(l_1, l_2))*E_t[l_1]*E_t[l_2]/(nt**2)
-
-    return cov_matrix*L/ns
-
 
 import scipy.stats as stats
 
@@ -272,6 +203,7 @@ def chi_squared_p_value(chi_squared_statistic, df):
     p_value = 1 - stats.chi2.cdf(chi_squared_statistic, df)
     return p_value
 
+
 # Calculate the normal quadratic form p-value
 def moment_chi_pvalue(statistic, cov1):
     '''
@@ -283,7 +215,8 @@ def moment_chi_pvalue(statistic, cov1):
     - Calculated p-value using momentchi2 library
     '''
     weight = la.eigh(cov1)[0]
-    p_value = 1-mchi.hbe(coeff=weight, x=statistic)
+
+    p_value = 1-mchi.hbe(coeff=abs(weight), x=statistic)
     
     return p_value
 
@@ -305,24 +238,138 @@ def Test(X_source, Z_source, V_source, Y_source, X_target, Z_target, V_target, m
     '''
     
     # Estimate the density ratio by the V|X,Z conditional model using Lasso
-    v_dr, X_source, Z_source, V_source, Y_source = est_v_ratio(X_source, Z_source, V_source,Y_source, X_target, Z_target, V_target, test_size = test_size)
+    v_dr, X_source, Z_source, V_source, Y_source = est_v_ratio(X_source, Z_source, V_source,Y_source, X_target, Z_target, V_target)
     
     # Calculate the xz_ratio by the given function
     xz_dr = xz_ratio(X_source,Z_source)
     # Calculate the estimated density ratio
     est_dr = v_dr * xz_dr
     
+    print('max dr: ' + str(max(est_dr)))
     # Estimate the covariance matrix for p-value calculation
     cov1 = generate_cov_matrix(Y_source, X_source, Z_source,V_source,model_X, E_X, L = L, K = K, density_ratio = est_dr)
     
     # Get the csPCR test statistic
     w, statistic = PCRtest(Y_source, X_source, Z_source,V_source,model_X, E_X, L = L, K = K, covariate_shift = True, density_ratio = est_dr)
-    weight = la.eigh(cov1)[0]
     
+    #print(w)
     # Call moment chi function to get the final p-value for the test
     p_value = moment_chi_pvalue(statistic, cov1)
     
     return p_value
+
+
+
+def Test_true_dr(X_source, Z_source, V_source, Y_source, X_target, Z_target, V_target, model_X, E_X,L=3, K=20, true_dr = None):
+    '''
+    Input:
+    - X_source, Z_source, V_source, Y_source: Source domain data
+    - X_target, Z_target, V_target: Target domain data
+    - model_X: Model for generating X
+    - E_X: Expectation function E_X(z, v)
+    - xz_ratio: Function for ratio X|Z
+    - L: Number of bins
+    - K: Number of counterfeits per bin
+
+    Return:
+    - p_value: Resulting p-value from the csPCR test
+    '''
+    
+    # Calculate the true density ratio
+    est_dr = true_dr(X_source, Z_source, V_source)
+    
+    print(max(est_dr))
+    # Estimate the covariance matrix for p-value calculation
+    cov1 = generate_cov_matrix(Y_source, X_source, Z_source,V_source,model_X, E_X, L = L, K = K, density_ratio = est_dr)
+    
+    # Get the csPCR test statistic
+    w, statistic = PCRtest(Y_source, X_source, Z_source,V_source,model_X, E_X, L = L, K = K, covariate_shift = True, density_ratio = est_dr)
+    # print(statistic)
+    # Call moment chi function to get the final p-value for the test
+    p_value = moment_chi_pvalue(statistic, cov1)
+    # p_value = chi_squared_p_value(statistic, 2)
+    return p_value
+    
+    
+
+
+
+# Function for power enhancement version PCR test
+def PCRtest_Powen(Y, X, Z, V, X_, Z_, V_, model_X, E_X, L, K, density_ratio):
+
+    y_ind, v_ind, c = [], [], []
+    W = np.array([0.0]*L)
+    ns, nt = V.size, V_.size
+    
+    g_lst = np.zeros(L)
+        
+    for j in range(ns):
+        y, x, z, v = Y[j], X[j], Z[j], V[j]
+        ind_y = Bin_pvalue(y, x, z, v, model_X, E_X, L, K)
+        ind_v = Bin_pvalue(v, x, z, v, model_X, E_X, L, K)
+        y_ind.append(ind_y)
+        v_ind.append(ind_v)
+    
+    y_ind = np.array(y_ind)
+    v_ind = np.array(v_ind)
+        
+    density_ratio=np.array(density_ratio).ravel()
+#     for l in range(L):
+#         a = np.array([1 if x == l else 0 for x in y_ind])
+#         b = np.array([1 if x == l else 0 for x in v_ind])
+#         a_d = a-(a@density_ratio.T)/density_ratio.sum()
+#         b_d = b-(b@density_ratio.T)/density_ratio.sum()
+
+#         g_lst[l] = ((density_ratio*a_d)@b_d.T)/((density_ratio*b_d)@b_d.T)
+    
+#     print(g_lst)
+    
+    
+
+        
+    for j in range(nt):
+        x_, z_, v_ = X_[j], Z_[j], V_[j]
+        ind_v_ = Bin_pvalue(v_, x_, z_, v_,model_X, E_X, L, K)
+        W[ind_v_] += (ns/nt)*g_lst[ind_v_]
+        c.append(ind_v_)
+
+    c = np.array(c)
+    for j in range(ns):
+        W[y_ind[j]] += density_ratio[j]
+        W[v_ind[j]] -= density_ratio[j]*g_lst[v_ind[j]]   
+
+    return W, L/ns * np.dot(W - ns/L, W - ns/L),y_ind, v_ind, c, g_lst
+
+
+def I(a, b):
+    if a == b:
+        return 1
+    else:
+        return 0
+    
+
+# Generate covariance matrix for the power enhancement version
+def generate_cov_matrix_powen(ind_y_source, ind_v_source, ind_v_target ,g_lst, L, K, density_ratio):
+    ns = ind_y_source.size
+    nt = ind_v_target.size
+    
+    ad = []
+    num_row = ns + nt
+    num_col = L
+    for l in range(L):
+        row = []
+        for s in range(ns):
+            row.append(density_ratio[s]*(I(l, ind_y_source[s]) - g_lst[l]*I(l, ind_v_source[s])))
+        for t in range(nt):
+            row.append(ns/nt*g_lst[l]*I(l, ind_v_target[t]))
+        ad.append(row)
+    ad = np.array(ad)
+    cov_matrix_s = np.cov(ad[:,:ns], rowvar=True)*(ns)
+    cov_matrix_t = np.cov(ad[:,ns+1:], rowvar=True)*(nt)
+    #print(cov_matrix_s, cov_matrix_t)
+    cov_matrix = cov_matrix_s + cov_matrix_t
+    #print(cov_matrix_s*L/ns, '\n', cov_matrix_t*L/ns, '\n', ad[:,ns+1:].shape)
+    return cov_matrix*L/ns
 
 
 # Function for power enhancement implementation
@@ -347,11 +394,44 @@ def Test_pe(X_source, Z_source, V_source, Y_source, X_target, Z_target, V_target
     xz_dr = xz_ratio(X_source,Z_source)
     # Calculate the estimated density ratio
     est_dr = v_dr * xz_dr
-
-    WV, statistic, a, b, c, g = PCRtest_Powen(Y_source, X_source, Z_source, V_source, Y_target, X_target, Z_target, V_target, model_X, E_X, L, K, est_dr)
+    
+    
+    #print(max(est_dr))
+    WV, statistic, a,b,c,g = PCRtest_Powen(Y_source, X_source, Z_source, V_source, X_target, Z_target, V_target, model_X, E_X, L, K, est_dr)
+    print(WV)
     cov = generate_cov_matrix_powen(a, b, c, g, L, K, density_ratio = est_dr)
-    weight = la.eigh(cov)[0]
-    p_value = moment_chi_pvalue(statistic, weight)
 
+    p_value = moment_chi_pvalue(statistic, cov)
+
+    return p_value
+
+
+
+def Test_pe_true_dr(X_source, Z_source, V_source, Y_source, X_target, Z_target, V_target, model_X, E_X,L=3, K=20, true_dr = None):
+    '''
+    Input:
+    - X_source, Z_source, V_source, Y_source: Source domain data
+    - X_target, Z_target, V_target: Target domain data
+    - model_X: Model for generating X
+    - E_X: Expectation function E_X(z, v)
+    - xz_ratio: Function for ratio X|Z
+    - L: Number of bins
+    - K: Number of counterfeits per bin
+
+    Return:
+    - p_value: Resulting p-value from the csPCR test
+    '''
+    
+    # Calculate the true density ratio
+    est_dr = true_dr(X_source, Z_source, V_source).reshape(-1)
+    
+    #print(est_dr)
+    
+    WV, statistic, a,b,c,g = PCRtest_Powen(Y_source, X_source, Z_source, V_source, X_target, Z_target, V_target, model_X, E_X, L, K, est_dr)
+    print(WV)
+    cov = generate_cov_matrix_powen(a, b, c, g, L, K, density_ratio = est_dr)
+
+    p_value = moment_chi_pvalue(statistic, cov)
+    
     return p_value
     
