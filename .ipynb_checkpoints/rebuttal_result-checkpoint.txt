@@ -1,0 +1,106 @@
+Effect:
+IS
+Effect: 1, power: 0.198
+Effect: 0, power: 0.064
+Effect: 0.2, power: 0.077
+Effect: 1.4, power: 0.233
+Effect: 0.8, power: 0.209
+Effect: 1.2, power: 0.239
+Effect: 1.8, power: 0.28
+Effect: 0.4, power: 0.116
+Effect: 0.6, power: 0.141
+Effect: 2, power: 0.284
+Effect: 1.6, power: 0.268
+csPCR
+Effect: 1.4, power: 0.41
+Effect: 0.8, power: 0.318
+Effect: 1.2, power: 0.375
+Effect: 1.6, power: 0.436
+Effect: 1.8, power: 0.477
+Effect: 2, power: 0.482
+Effect: 1, power: 0.33
+Effect: 0, power: 0.042
+Effect: 0.2, power: 0.108
+Effect: 0.4, power: 0.157
+Effect: 0.6, power: 0.239
+pe
+Effect: 1, power: 0.658
+Effect: 0.4, power: 0.339
+Effect: 2, power: 0.833
+Effect: 1.4, power: 0.76
+Effect: 1.8, power: 0.819
+Effect: 0.2, power: 0.171
+Effect: 0.8, power: 0.571
+Effect: 1.6, power: 0.781
+Effect: 1.2, power: 0.706
+Effect: 0.6, power: 0.459
+Effect: 0, power: 0.027
+
+
+X_effect
+IS:
+Effect: 0.2, power: 0.235
+Effect: 1.4, power: 0.451
+Effect: 1.2, power: 0.421
+Effect: 0, power: 0.211
+Effect: 1.6, power: 0.454
+Effect: 1.8, power: 0.526
+Effect: 0.6, power: 0.333
+Effect: 0.4, power: 0.275
+Effect: 1, power: 0.396
+Effect: 0.8, power: 0.352
+Effect: 2, power: 0.54
+
+csPCR:
+Effect: 0.4, power: 0.483
+Effect: 0.8, power: 0.598
+Effect: 0.2, power: 0.419
+Effect: 1.2, power: 0.656
+Effect: 1.4, power: 0.696
+Effect: 1, power: 0.594
+Effect: 0, power: 0.338
+Effect: 0.6, power: 0.568
+Effect: 2, power: 0.763
+Effect: 1.6, power: 0.722
+Effect: 1.8, power: 0.745
+
+pe:
+Effect: 0.2, power: 0.725
+Effect: 1.2, power: 0.883
+Effect: 0.6, power: 0.818
+Effect: 1.4, power: 0.921
+Effect: 1.6, power: 0.934
+Effect: 1, power: 0.891
+Effect: 0.8, power: 0.85
+Effect: 0.4, power: 0.748
+Effect: 0, power: 0.642
+Effect: 1.8, power: 0.947
+Effect: 2, power: 0.956
+
+SIZE
+IS:
+Sample: 800, size: 0.05
+Sample: 400, size: 0.055
+Sample: 500, size: 0.061
+Sample: 900, size: 0.046
+Sample: 1000, size: 0.058
+Sample: 600, size: 0.057
+Sample: 700, size: 0.051
+csPCR:
+Sample: 400, power: 0.105
+Sample: 500, power: 0.082
+Sample: 600, power: 0.067
+Sample: 700, power: 0.055
+Sample: 800, power: 0.052
+Sample: 900, power: 0.048
+Sample: 1000, power: 0.053
+
+pe:
+Sample: 1000, size: 0.044
+Sample: 700, size: 0.043
+Sample: 600, size: 0.046
+Sample: 800, size: 0.051
+Sample: 900, size: 0.046
+Sample: 400, size: 0.055
+Sample: 500, size: 0.046
+

@@ -12,10 +12,27 @@ from numpy import linalg as la
 import momentchi2 as mchi
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import RidgeCV
-
+from sklearn.linear_model import LogisticRegression
 # Function for estimate the conditional model of V|X,Z
 from sklearn.linear_model import ElasticNetCV
 
+
+def est_z_ratio(Z_e, Z_s, Z_t, method = 'LR'):
+    N_e = Z_e.shape[0]
+    N_t = Z_t.shape[0]
+    N_ratio = N_e/N_t
+    y_e = np.zeros(N_e)
+    y_t = np.ones(Z_t)
+    z = np.concatenate((Z_e, Z_t), axis=1)
+    y = np.concatenate((y_e, y_t), axis = 1)
+    if method == 'LR':
+        clf = LogisticRegression(random_state=0).fit(z, y)
+        class_prob = clf.predict_prob(Z_s)
+        prob_ratio = class_prob[:, 0:1] / class_prob[:, 1:2]
+        density_ratio = prob_ratio * N_ratio
+        
+        
+    
 
 def est_v_ratio(X_s, Z_s, V_s, Y_s, X_t, Z_t, V_t, test_size=0.5):
     '''
@@ -69,6 +86,8 @@ def est_v_ratio(X_s, Z_s, V_s, Y_s, X_t, Z_t, V_t, test_size=0.5):
     v_ratio_test = V_t_prob_test / V_s_prob_test
 
     return v_ratio_test, X_s_test, Z_s_test, V_s_test, Y_s_test
+
+
 
 # Function for CRT statistic calculation for each sample
 def T_statistic(y, x, z, v, E_X):
@@ -169,7 +188,7 @@ def generate_cov_matrix(Y, X, Z, V, model_X, E_X, density_ratio,L, K):
     
     n = Y.size
     diag = np.array([0.0]*L)
-    
+    # print(Y,X,Z,V)
     # Loop over all samples and add corresponding weights
     for j in range(n):
         y, x, z, v = Y[j], X[j], Z[j], V[j]
@@ -286,8 +305,8 @@ def Test_true_dr(X_source, Z_source, V_source, Y_source, X_target, Z_target, V_t
     w, statistic = PCRtest(Y_source, X_source, Z_source,V_source,model_X, E_X, L = L, K = K, covariate_shift = True, density_ratio = est_dr)
     # print(statistic)
     # Call moment chi function to get the final p-value for the test
-    #p_value = moment_chi_pvalue(statistic, cov1)
-    p_value = chi_squared_p_value(statistic, 2)
+    p_value = moment_chi_pvalue(statistic, cov1)
+    # p_value = chi_squared_p_value(statistic, 2)
     return p_value
     
     

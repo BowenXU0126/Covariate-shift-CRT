@@ -1,0 +1,12 @@
+Data Split:
+Suppose we have source data (X_source, Z_source, V_source, Y_source) and target data (X_target, Z_target, V_target, Y_target).
+1. We define a proportion (e.g 0.5) means how many source data we want to use for estimating the density ratio, and define these data (X_e, Z_e, V_e). Then remove these data from the source population. For target data, we use all of them for estimation density ratio.
+2. Last time we mentioned we should use target data to estimate the X|Z model. I made the modification in my own code so no need for you modify anything.
+
+You actually do not need to modify the way to load data, just be the same with last time.
+
+Experiments:
+1. Compare our method with 1) PCR using only source data, 2) PCR using only target data, 3) IS method using both, 4) power enhancement version of our method. Also I add a modification to change the scoring function in power enhancement from V*X to (-V)*X to capture the negative correlation between Y and V.
+
+2. Tuning hyper parameter L:
+I write a for loop to test different L and record the results. The L range is [2, 5, 8, 10].
