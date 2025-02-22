@@ -32,8 +32,8 @@ For detailed usage, check `Simulation_Demo.ipynb`.
 
 ## 📖 Citation
 If you use this code in your research, please cite our paper:
-[Paper Link](<Insert-Link-Here>)
+[Paper Link](<https://arxiv.org/abs/2405.19231>)
 
 ---
-For any questions, feel free to open an issue or contact us!
+For any questions, feel free to open an issue or contact us at <bowenxu@g.harvard.edu>
 
