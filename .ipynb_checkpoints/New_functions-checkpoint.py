@@ -397,8 +397,8 @@ def Test(X_e, Z_e, V_e, X_source, Z_source, V_source, Y_source, X_target, Z_targ
     # xz_dr = xz_ratio(X_source,Z_source)
     # Calculate the estimated density ratio
     est_dr = v_dr * z_dr
-    # print(f'Max of DR: {np.max(est_dr)}')
-    # print(f'Mean of DE: {np.mean(est_dr)}')
+    est_dr = est_dr / est_dr.mean()
+
     #est_dr = est_dr/np.mean(est_dr)               
     if datatype == 'binary':
         model = est_x(X_target, Z_target, datatype = 'binary')
@@ -408,9 +408,13 @@ def Test(X_e, Z_e, V_e, X_source, Z_source, V_source, Y_source, X_target, Z_targ
 
         # Get the csPCR test statistic
         w, statistic = PCRtest(Y_source, X_source, Z_source,V_source,model_X_binary, model=model, L = L, K = K, covariate_shift = True, density_ratio = est_dr)
+        print(f'weight distribution:{w}, test statistic:{statistic}')
+        print(f'Max density ratio:{max(est_dr)}')
+        print(f'X model coef:{model.coef_}')
+        print(f'covariance matrix{cov1}')
     else:
         model,std = est_x(X_target, Z_target, datatype = 'continuous')
-        print(std)
+        
         model_X = create_model_X_continuous(std)
         # Estimate the covariance matrix for p-value calculation
         cov1 = generate_cov_matrix(Y_source, X_source, Z_source,V_source,model_X_true, model=model,L = L, K = K, density_ratio = est_dr)
@@ -506,6 +510,55 @@ def PCRtest_Powen(Y, X, Z, V, X_, Z_, V_, model_X, model, L, K, density_ratio):
         W[v_ind[j]] -= density_ratio[j]*g_lst[v_ind[j]]   
 
     return W, L/ns * np.dot(W - ns/L, W - ns/L),y_ind, v_ind, c, g_lst
+# def PCRtest_Powen(Y, X, Z, V, X_, Z_, V_, model_X, model, L, K, density_ratio):
+#     ns = V.size
+#     nt = V_.size
+
+#     # Compute y_ind and v_ind using list comprehension
+#     y_ind = np.array([Bin_pvalue(Y[j], X[j], Z[j], V[j], model_X, model, L, K) for j in range(ns)])
+#     v_ind = np.array([Bin_pvalue(V[j], X[j], Z[j], V[j], model_X, model, L, K) for j in range(ns)])
+
+#     density_ratio = np.array(density_ratio).ravel()  # Ensure it's a 1D array
+
+#     # Vectorize over L to compute g_lst
+#     L_values = np.arange(L)  # Shape (L,)
+
+#     # Create indicator matrices A and B
+#     A = (y_ind == L_values[:, None]).astype(int)  # Shape (L, ns)
+#     B = (v_ind == L_values[:, None]).astype(int)  # Shape (L, ns)
+
+#     sum_density_ratio = density_ratio.sum()
+#     A_density = A * density_ratio  # Element-wise multiplication
+#     B_density = B * density_ratio
+
+#     sum_A_density = A_density.sum(axis=1)  # Sum over ns
+#     sum_B_density = B_density.sum(axis=1)
+
+#     # Compute adjusted values a_d and b_d
+#     a_d = A - (sum_A_density[:, None] / sum_density_ratio)
+#     b_d = B - (sum_B_density[:, None] / sum_density_ratio)
+
+#     # Compute numerator and denominator for g_lst
+#     numerator = np.sum(A_density * b_d, axis=1)
+#     denominator = np.sum(B_density * b_d, axis=1)
+#     g_lst = numerator / denominator
+
+#     # Initialize W and compute c using list comprehension
+#     W = np.zeros(L)
+#     c = np.array([Bin_pvalue(V_[j], X_[j], Z_[j], V_[j], model_X, model, L, K) for j in range(nt)])
+
+#     # Update W based on c and g_lst
+#     W_increment = np.bincount(c, weights=(ns / nt) * g_lst[c], minlength=L)
+#     W += W_increment
+
+#     # Update W using np.add.at for in-place addition
+#     np.add.at(W, y_ind, density_ratio)
+#     np.add.at(W, v_ind, -density_ratio * g_lst[v_ind])
+
+#     # Compute the test statistic
+#     test_stat = L / ns * np.dot(W - ns / L, W - ns / L)
+
+#     return W, test_stat, y_ind, v_ind, c, g_lst
 
 
 def I(a, b):
@@ -534,6 +587,7 @@ def generate_cov_matrix_powen(ind_y_source, ind_v_source, ind_v_target ,g_lst, L
     
     cov_matrix = np.cov(ad, rowvar=True)
     return cov_matrix*L/ns*(ns+nt)
+
 
 
 # Function for power enhancement implementation
