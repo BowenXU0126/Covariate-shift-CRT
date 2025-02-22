@@ -1,4 +1,4 @@
-# Covariate Shift Conditional Independence Testing
+# Covariate Shift Corrected Conditional Independence Testing (NeurIPS 2024)
 
 This repository contains the codebase for our paper on **Covariate Shift Conditional Randomization Test (CRT)**. The `csPCR` function provides the core implementation of our proposed statistical method.
 
